@@ -4,33 +4,36 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from lime.lime_tabular import LimeTabularExplainer
+from functools import partial
 
 
-def fitted_model_prediction(array: np.ndarray) -> np.ndarray:
+def fitted_model_prediction(array: np.ndarray, sigma=1) -> np.ndarray:
     x = array[:, 0]
-    y = np.exp(-(x ** 2) / 2)
+    y = np.exp(-(x ** 2) / (2 * sigma ** 2))
     return y
 
 
 def local_approximation(
-    array: np.ndarray, approx_at: np.ndarray
+    array: np.ndarray, approx_at: np.ndarray, sigma=1
 ) -> np.ndarray:
     x = array[:, 0]
     x0 = approx_at[:, 0]
-    m = -x0 * np.exp(-(x0 ** 2) / 2)
-    b = fitted_model_prediction(approx_at)
+    m = -x0 * np.exp(-(x0 ** 2) / (2 * sigma ** 2)) / (sigma ** 2)
+    b = fitted_model_prediction(approx_at, sigma)
 
     y = m[0] * (x - x0[0]) + b[0]
     return y
 
 
-def plot_model_and_local_preds(train_df, instance_to_be_explained):
+def plot_model_and_local_preds(train_df, instance_to_be_explained, sigma=1):
     x = train_df.values[:, 0]
-    y_pred = fitted_model_prediction(train_df.values)
+    y_pred = fitted_model_prediction(train_df.values, sigma=sigma)
 
     local_data = train_df.values / 6 + instance_to_be_explained.values
     y_approx = local_approximation(
-        local_data, approx_at=instance_to_be_explained.values
+        local_data,
+        approx_at=instance_to_be_explained.values,
+        sigma=sigma,
     )
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 5))
@@ -39,7 +42,9 @@ def plot_model_and_local_preds(train_df, instance_to_be_explained):
     ax.scatter(x=local_data[:, 0], y=y_approx, marker=".")
     ax.scatter(
         x=instance_to_be_explained.values[:, 0],
-        y=fitted_model_prediction(instance_to_be_explained.values),
+        y=fitted_model_prediction(
+            instance_to_be_explained.values, sigma=sigma
+        ),
         marker="*",
         s=200,
     )
@@ -47,7 +52,8 @@ def plot_model_and_local_preds(train_df, instance_to_be_explained):
     return fig
 
 
-def local_interpret(train_df, instance_to_be_explained):
+def local_interpret(train_df, instance_to_be_explained, sigma):
+    pred_fn = partial(fitted_model_prediction, sigma=sigma)
     explainer = LimeTabularExplainer(
         train_df.values,
         mode="regression",
@@ -56,19 +62,41 @@ def local_interpret(train_df, instance_to_be_explained):
         sample_around_instance=True,
     )
     explanation = explainer.explain_instance(
-        instance_to_be_explained.values.ravel(), fitted_model_prediction
+        instance_to_be_explained.values.ravel(), pred_fn
     )
-    return explanation
+    return explanation.as_list()
+
+
+def plot_feature_importances(train_df, instance_to_be_explained, sigma=1):
+    fi = local_interpret(train_df, instance_to_be_explained, sigma=sigma)
+    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+
+    fi_data = pd.DataFrame(fi)
+    positive_fi = fi_data.iloc[:, 1] > 0
+    color = positive_fi.map({True: 'blue', False: 'red'})
+
+    ax.barh(fi_data.iloc[:, 0], fi_data.iloc[:, 1], height=0.3, color=color)
+    ax.set_xlim(-0.5, 0.5)
+    ax.invert_yaxis()
+    # ["Feature Name", "Feature Importance"]
+    return fig
+
 
 
 # --------------------------------- APP ----------------------------------------
+data_min = -0.5
+data_max = 0.5
+
 st.title("Theoretical Model")
+st.sidebar.markdown("Model parameter:")
+s = st.sidebar.slider("Sigma", 0.05, 0.5, 0.2)
+
 st.sidebar.markdown("Get feature importance for:")
-f1 = st.sidebar.slider("Feature 1", -2.5, 2.5, 0.0)
-f2 = st.sidebar.slider("Feature 2", -2.5, 2.5, 0.0)
+f1 = st.sidebar.slider("Feature 1", data_min, data_max, 0.0)
+f2 = st.sidebar.slider("Feature 2", data_min, data_max, 0.0)
 
 train_df = pd.DataFrame(
-    np.random.uniform(low=-2.5, high=2.5, size=(10000, 2)),
+    np.random.uniform(low=data_min, high=data_max, size=(5000, 2)),
     columns=["Feature 1", "Feature 2"],
 )
 
@@ -79,7 +107,11 @@ instance_to_be_explained = pd.DataFrame(
     }
 )
 
-# print(explanation.as_list())
-
-fig = plot_model_and_local_preds(train_df, instance_to_be_explained)
+fig = plot_model_and_local_preds(train_df, instance_to_be_explained, sigma=s)
 st.pyplot(fig)
+
+bar = plot_feature_importances(train_df, instance_to_be_explained, sigma=s)
+st.pyplot(bar)
+
+# st.bar_chart(data=fi_data.set_index("Feature Name"))
+# st.write(fi_data)
