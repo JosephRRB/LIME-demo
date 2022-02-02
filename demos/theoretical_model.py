@@ -47,11 +47,12 @@ def plot_model_and_local_preds(
 
     fig, ax = plt.subplots(1, 1, figsize=figsize)
 
+    ax.scatter(x=x, y=y_pred, marker=".", label="Model predictions")
     ax.scatter(
-        x=x, y=y_pred, marker=".", label="Model predictions on training data"
-    )
-    ax.scatter(
-        x=local_data[:, 0], y=y_approx, marker=".", label="Local approximation"
+        x=local_data[:, 0],
+        y=y_approx,
+        marker=".",
+        label="Local linear approximation",
     )
     ax.scatter(
         x=instance_to_be_explained.values[:, 0],
@@ -183,10 +184,51 @@ def deploy_plots():
         }
     )
 
+    st.markdown(
+        """
+    In the first figure below, we visualize the model predictions over the
+    "training" dataset and include a marker to represent the model prediction 
+    for the instance being explained. Around the instance, we also consider a
+    local linear approximation of the model. 
+    
+    In the second figure, we show a barplot representing the feature importances
+    of the instance as estimated by LIME. Blue bars correspond to positive
+    impact, while red bars correspond to negative impact. The size of the bars
+    refer to how much impact the feature has on the model prediction. In our 
+    setup, a positive feature impact means that increasing the feature 
+    translates to an increase in the model prediction, while a negative feature
+    impact means the opposite.
+    """
+    )
     plot_model_and_local_preds(
         train_df, instance_to_be_explained, sigma=s, figsize=(10, 4)
     )
 
     plot_feature_importances(
         train_df, instance_to_be_explained, sigma=s, figsize=(10, 3)
+    )
+
+    st.markdown(
+        """
+    We observe that the feature importance of the instance is related to the 
+    slope of the linear approximation around the said instance. This is directly
+    seen by the feature importance of "Feature 1". As expected, when "Feature 1"
+    is negative, the slope of the local linear approximation is positive and the 
+    estimated "Feature 1" importance is also positive. The opposite is true 
+    when "Feature 1" is positive. As for the other features, we see that their
+    feature importances are always very close to zero meaning that they have
+    little to no impact on the model prediction. This makes sense because by
+    construction, the model ignores the other features and only uses "Feature 1"
+    
+    The intuition for LIME is then about **finding a linear approximation of the
+    model around the instance being explained** and extracting the coefficients 
+    of the resulting linear model. As an overview, LIME does this by:
+    - Generating a set of points that mimic the training set (called 
+        perturbations) 
+    - Assigning weights on each of the perturbations (higher weights are given 
+        to those closer to the instance being explained)
+    - Getting the model predictions on the instance and the perturbations
+    - And lastly, training a weighted linear model based on the instance along 
+        with the perturbations and the corresponding model predictions
+    """
     )
