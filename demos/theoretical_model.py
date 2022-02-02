@@ -1,10 +1,12 @@
+from functools import partial
+from io import BytesIO
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import streamlit as st
 
+import streamlit as st
 from lime.lime_tabular import LimeTabularExplainer
-from functools import partial
 
 
 def fitted_model_prediction(
@@ -31,21 +33,26 @@ def plot_model_and_local_preds(
     train_df: pd.DataFrame,
     instance_to_be_explained: pd.DataFrame,
     sigma: float = 1.0,
+    figsize=(10, 5),
 ):
     x = train_df.values[:, 0]
     y_pred = fitted_model_prediction(train_df.values, sigma=sigma)
 
-    local_data = train_df.values / 6 + instance_to_be_explained.values
+    local_data = train_df.values / 10 + instance_to_be_explained.values
     y_approx = local_approximation(
         local_data,
         approx_at=instance_to_be_explained.values,
         sigma=sigma,
     )
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
 
-    ax.scatter(x=x, y=y_pred, marker=".")
-    ax.scatter(x=local_data[:, 0], y=y_approx, marker=".")
+    ax.scatter(
+        x=x, y=y_pred, marker=".", label="Model predictions on training data"
+    )
+    ax.scatter(
+        x=local_data[:, 0], y=y_approx, marker=".", label="Local approximation"
+    )
     ax.scatter(
         x=instance_to_be_explained.values[:, 0],
         y=fitted_model_prediction(
@@ -53,9 +60,18 @@ def plot_model_and_local_preds(
         ),
         marker="*",
         s=200,
+        label="Instance being explained",
     )
     ax.set_ylim(0, 1.2)
-    return fig
+    ax.set_xlim(-0.5, 0.5)
+    ax.legend(loc="upper right")
+    ax.set_ylabel("Model Predictions", fontsize=14)
+    ax.set_xlabel("Feature 1", fontsize=14)
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    fig.savefig(buffer, format="png")
+    st.image(buffer)
 
 
 def local_interpret(
@@ -81,52 +97,96 @@ def plot_feature_importances(
     train_df: pd.DataFrame,
     instance_to_be_explained: pd.DataFrame,
     sigma: float = 1.0,
+    figsize=(10, 3),
 ):
     fi = local_interpret(train_df, instance_to_be_explained, sigma=sigma)
-    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
 
-    fi_data = pd.DataFrame(fi)
+    fi_data = pd.DataFrame(fi).sort_values(by=0)
     positive_fi = fi_data.iloc[:, 1] > 0
     color = positive_fi.map({True: "blue", False: "red"})
 
     ax.barh(fi_data.iloc[:, 0], fi_data.iloc[:, 1], height=0.3, color=color)
-    ax.set_xlim(-0.5, 0.5)
+    ax.set_xlim(-0.4, 0.4)
+    ax.vlines(0, -0.25, 3.25, colors="k", linestyles="dashed", alpha=0.3)
     ax.invert_yaxis()
-    return fig
+    ax.set_xlabel("Feature Importance", fontsize=14)
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    fig.savefig(buffer, format="png")
+    st.image(buffer)
+
 
 @st.cache
 def generate_data(data_min, data_max):
     train_df = pd.DataFrame(
-        np.random.uniform(low=data_min, high=data_max, size=(5000, 2)),
-        columns=["Feature 1", "Feature 2"],
+        np.random.uniform(low=data_min, high=data_max, size=(5000, 4)),
+        columns=["Feature 1", "Feature 2", "Feature 3", "Feature 4"],
     )
     return train_df
 
-def deploy_plots():
-    data_min = -0.5
-    data_max = 0.5
 
-    st.title("Theoretical Model")
+def deploy_plots():
+    st.header("Theoretical Model")
+    st.markdown(
+        """
+    To get an intuition for how LIME works under the hood, let's first consider
+    a theoretical model defined as a concrete mathematical function $M_{\sigma}$
+    with parameter $\sigma$:
+    """
+    )
+    st.latex(
+        r"""
+    M_{\sigma}(x) = \exp\left(-\frac{x^2}{2\sigma^2}\right)
+    """
+    )
     st.sidebar.markdown("Model parameter:")
     s = st.sidebar.slider("Sigma", 0.05, 0.5, 0.2)
-
-    st.sidebar.markdown("Get feature importance for:")
+    st.markdown(
+        """
+    In the sidebar, we can choose a value for $\sigma$. As for the data, we will
+    use a randomly generated dataset with four numerical features and we show a 
+    sample here: 
+    """
+    )
+    data_min = -0.5
+    data_max = 0.5
+    train_df = generate_data(data_min, data_max)
+    st.table(train_df.head())
+    st.markdown(
+        """
+    Let's further define $M_{\sigma}(x)$ to take only the first feature and 
+    ignore the rest. That is, $x$ only represents "Feature 1". Lastly, let's
+    say that $M_{\sigma}$ has already been "trained" on this dataset.
+    """
+    )
+    st.header("Explaining an instance")
+    st.markdown(
+        """
+    Now, we pick an instance to be explained. That is, we want to know how the
+    features of the said instance impact the model's predictions. In the 
+    sidebar, we can choose the feature values of the instance we want to explain
+    """
+    )
+    st.sidebar.markdown("Features of the instance to be explained:")
     f1 = st.sidebar.slider("Feature 1", data_min, data_max, 0.0)
     f2 = st.sidebar.slider("Feature 2", data_min, data_max, 0.0)
-
-    train_df = generate_data(data_min, data_max)
-
+    f3 = st.sidebar.slider("Feature 3", data_min, data_max, 0.0)
+    f4 = st.sidebar.slider("Feature 4", data_min, data_max, 0.0)
     instance_to_be_explained = pd.DataFrame(
         {
             "Feature 1": [f1],
             "Feature 2": [f2],
+            "Feature 3": [f3],
+            "Feature 4": [f4],
         }
     )
 
-    fig = plot_model_and_local_preds(
-        train_df, instance_to_be_explained, sigma=s
+    plot_model_and_local_preds(
+        train_df, instance_to_be_explained, sigma=s, figsize=(10, 4)
     )
-    st.pyplot(fig)
 
-    bar = plot_feature_importances(train_df, instance_to_be_explained, sigma=s)
-    st.pyplot(bar)
+    plot_feature_importances(
+        train_df, instance_to_be_explained, sigma=s, figsize=(10, 3)
+    )
