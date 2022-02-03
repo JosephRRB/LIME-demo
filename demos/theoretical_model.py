@@ -128,7 +128,7 @@ def generate_data(data_min, data_max):
     return train_df
 
 
-def deploy_plots():
+def deploy_plots_for_theoretical_model():
     st.header("Theoretical Model")
     st.markdown(
         """

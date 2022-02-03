@@ -79,7 +79,7 @@ def plot_feature_importance_for_clf_model(
     st.image(buffer)
 
 
-if __name__ == "__main__":
+def deploy_plots_for_sklearn_models():
     # https://archive.ics.uci.edu/ml/datasets/banknote+authentication
     # https://jamesmccaffrey.wordpress.com/2020/08/18/in-the-banknote-authentication-dataset-class-0-is-genuine-authentic/
     data_dir = Path(__file__).parents[1] / "demos/data"

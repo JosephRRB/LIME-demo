@@ -53,5 +53,3 @@ def fit_models():
     dump(mlp, data_dir / "fitted_mlp.joblib")
 
 
-# if __name__ == "__main__":
-#     fit_models()
