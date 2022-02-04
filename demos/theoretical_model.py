@@ -81,17 +81,19 @@ def local_interpret(
     sigma: float = 1.0,
 ):
     pred_fn = partial(fitted_model_prediction, sigma=sigma)
-    explainer = LimeTabularExplainer(
-        train_df.values,
-        mode="regression",
-        feature_names=train_df.columns,
-        discretize_continuous=False,
-        sample_around_instance=True,
-    )
-    explanation = explainer.explain_instance(
-        instance_to_be_explained.values.ravel(), pred_fn
-    )
-    return explanation.as_list()
+    with st.expander("See explanation code details:"):
+        with st.echo():
+            explainer = LimeTabularExplainer(
+                train_df.values,
+                mode="regression",
+                feature_names=train_df.columns,
+                discretize_continuous=False,
+                sample_around_instance=True,
+            )
+            explanation = explainer.explain_instance(
+                instance_to_be_explained.values.ravel(), pred_fn
+            ).as_list()
+    return explanation
 
 
 def plot_feature_importances(
