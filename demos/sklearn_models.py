@@ -23,26 +23,29 @@ def local_interpret_clf_model(
     model,
     X_train: pd.DataFrame,
     query: pd.DataFrame,
+    code_container,
     explain_predicted=True,
 ):
-    pred_proba_fn = model.predict_proba
-    explainer = LimeTabularExplainer(
-        X_train.values,
-        mode="classification",
-        feature_names=X_train.columns,
-        discretize_continuous=True,
-        sample_around_instance=True,
-        class_names=model.classes_,
-    )
-    probas = pred_proba_fn(query)
-    if explain_predicted:
-        label = np.argmax(probas)
-    else:
-        label = np.argmin(probas)
-    exp = explainer.explain_instance(
-        query.values.ravel(), pred_proba_fn, labels=[label]
-    )
-    fi = {exp.class_names[label]: exp.as_list(label=label)}
+    with code_container.expander("See LIME explanation code details:"):
+        with st.echo():
+            pred_proba_fn = model.predict_proba
+            explainer = LimeTabularExplainer(
+                X_train.values,
+                mode="classification",
+                feature_names=X_train.columns,
+                discretize_continuous=True,
+                sample_around_instance=True,
+                class_names=model.classes_,
+            )
+            probas = pred_proba_fn(query)
+            if explain_predicted:
+                label = np.argmax(probas)
+            else:
+                label = np.argmin(probas)
+            exp = explainer.explain_instance(
+                query.values.ravel(), pred_proba_fn, labels=[label]
+            )
+            fi = {exp.class_names[label]: exp.as_list(label=label)}
     # fi_human_readable = {
     #     exp.class_names[l]: [
     #         (exp.domain_mapper.discretized_feature_names[f], fi)
@@ -54,24 +57,22 @@ def local_interpret_clf_model(
 
 
 def plot_feature_importance_for_clf_model(
-    model, X_train, query, explain_predicted=True, figsize=(10, 5)
+    feature_importances: dict, figsize=(10, 5)
 ):
-    fi = local_interpret_clf_model(
-        model, X_train, query, explain_predicted=explain_predicted
-    )
-
     fig, ax = plt.subplots(1, 1, figsize=figsize)
 
-    fi_data = pd.DataFrame(*fi.values())  # .sort_values(by=0)
+    fi_data = pd.DataFrame(*feature_importances.values()).sort_values(
+        by=1, key=lambda x: abs(x)
+    )
+    class_name = list(feature_importances.keys())[0]
     positive_fi = fi_data.iloc[:, 1] > 0
     color = positive_fi.map({True: "blue", False: "red"})
 
     ax.barh(fi_data.iloc[:, 0], fi_data.iloc[:, 1], height=0.3, color=color)
     ax.set_xlim(-0.6, 0.6)
     ax.vlines(0, -0.25, 3.25, colors="k", linestyles="dashed", alpha=0.3)
-    ax.invert_yaxis()
     ax.set_xlabel("Feature Importance", fontsize=14)
-    ax.set_title(f"Class: {list(fi.keys())[0]}", fontsize=18)
+    ax.set_title(f"Local Explanation for Class: {class_name}", fontsize=18)
     plt.tight_layout()
 
     buffer = BytesIO()
@@ -156,12 +157,17 @@ def deploy_plots_for_sklearn_models():
     explain_predicted = st.checkbox(
         "Explain model's predicted class", value=True
     )
+    code_container = st.empty()
     for name, model in zip(model_names, models):
         st.subheader(name)
-        plot_feature_importance_for_clf_model(
+        fi = local_interpret_clf_model(
             model,
             X_train,
             query,
+            code_container,
             explain_predicted=explain_predicted,
+        )
+        plot_feature_importance_for_clf_model(
+            fi,
             figsize=(10, 3),
         )

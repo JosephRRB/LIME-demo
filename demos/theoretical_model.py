@@ -81,7 +81,7 @@ def local_interpret(
     sigma: float = 1.0,
 ):
     pred_fn = partial(fitted_model_prediction, sigma=sigma)
-    with st.expander("See explanation code details:"):
+    with st.expander("See LIME explanation code details:"):
         with st.echo():
             explainer = LimeTabularExplainer(
                 train_df.values,
@@ -97,15 +97,11 @@ def local_interpret(
 
 
 def plot_feature_importances(
-    train_df: pd.DataFrame,
-    instance_to_be_explained: pd.DataFrame,
-    sigma: float = 1.0,
+    feature_importances: list,
     figsize=(10, 3),
 ):
-    fi = local_interpret(train_df, instance_to_be_explained, sigma=sigma)
     fig, ax = plt.subplots(1, 1, figsize=figsize)
-
-    fi_data = pd.DataFrame(fi).sort_values(by=0)
+    fi_data = pd.DataFrame(feature_importances).sort_values(by=0)
     positive_fi = fi_data.iloc[:, 1] > 0
     color = positive_fi.map({True: "blue", False: "red"})
 
@@ -205,10 +201,8 @@ def deploy_plots_for_theoretical_model():
     plot_model_and_local_preds(
         train_df, instance_to_be_explained, sigma=s, figsize=(10, 4)
     )
-
-    plot_feature_importances(
-        train_df, instance_to_be_explained, sigma=s, figsize=(10, 3)
-    )
+    fi = local_interpret(train_df, instance_to_be_explained, sigma=s)
+    plot_feature_importances(fi, figsize=(10, 3))
 
     st.markdown(
         """
