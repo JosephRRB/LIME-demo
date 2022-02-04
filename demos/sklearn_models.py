@@ -94,8 +94,8 @@ def deploy_plots_for_sklearn_models():
     We will be using the [banknote authentication dataset](https://archive.ics.uci.edu/ml/datasets/banknote+authentication)
     for binary classification. The dataset contains four continuous numerical 
     features extracted from the image of the banknotes and its 
-    wavelet-transformed version. The class labels are also balanced and their
-    meanings are clarified [here](https://jamesmccaffrey.wordpress.com/2020/08/18/in-the-banknote-authentication-dataset-class-0-is-genuine-authentic/).
+    wavelet-transformed version (WTI). The class labels are also balanced and 
+    their meanings are clarified [here](https://jamesmccaffrey.wordpress.com/2020/08/18/in-the-banknote-authentication-dataset-class-0-is-genuine-authentic/).
     
     The classification models have already been fitted on a certain split of the 
     data, but can be refitted by clicking the button below. This will create a 
@@ -207,19 +207,16 @@ def deploy_plots_for_sklearn_models():
     probability increased or decreased. The features in the figures are sorted
     with respect to the feature importance magnitude or how impactful they were 
     on the model's prediction. That is, the most impactful feature is at the top
-    while the least impactful is at the bottom. 
-    
-    Additionally, since we are doing a binary classification task, we can 
-    observe that the explanations for the predicted class are opposite to those 
-    for the non-predicted class.
+    while the least impactful is at the bottom. Additionally, since we are doing 
+    a binary classification task, we can observe that the explanations for the 
+    predicted class are opposite to those for the non-predicted class.
     
     We can see that even if the models were trained on the same dataset and 
     makes the same prediction for the same instance, the explanations estimated
     by LIME are not necessarily the same. The most readily seen is the 
     difference in ranking of the most impactful features. This suggests that 
-    the models may be using the features differently. 
-    
-    On a technical note, since LIME has some randomness in its process, it would
-    be beneficial to see the average effect on a variety of trials and datasets.
+    the models may be using the features differently. On a technical note, since 
+    LIME has some randomness in its process, it would be beneficial to see the 
+    average effect on a variety of trials and datasets.
     """
     )
