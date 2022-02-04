@@ -34,7 +34,7 @@ def local_interpret_clf_model(
                 mode="classification",
                 feature_names=X_train.columns,
                 discretize_continuous=True,
-                sample_around_instance=True,
+                discretizer='quartile',
                 class_names=model.classes_,
             )
             probas = pred_proba_fn(query)
@@ -69,7 +69,7 @@ def plot_feature_importance_for_clf_model(
     color = positive_fi.map({True: "blue", False: "red"})
 
     ax.barh(fi_data.iloc[:, 0], fi_data.iloc[:, 1], height=0.3, color=color)
-    ax.set_xlim(-0.6, 0.6)
+    ax.set_xlim(-0.5, 0.5)
     ax.vlines(0, -0.25, 3.25, colors="k", linestyles="dashed", alpha=0.3)
     ax.set_xlabel("Feature Importance", fontsize=14)
     ax.set_title(f"Local Explanation for Class: {class_name}", fontsize=18)
@@ -143,7 +143,9 @@ def deploy_plots_for_sklearn_models():
     st.header("Explaining an instance")
     st.markdown(
         """
-    We can now pick an instance from the test dataset 
+    We can now pick an instance from the test dataset as shown in the table 
+    below. Select a row from the table by selecting the row index in the 
+    selection box below the table.
     """
     )
     st.dataframe(X_test)
@@ -151,9 +153,33 @@ def deploy_plots_for_sklearn_models():
         "Select a row index:", min_value=0, max_value=len(X_test)
     )
     query = X_test.loc[[query_idx], :]
-    st.write("Data row to be explained:")
+    st.write(
+        """
+    This selected row will then be the data instance whose model predictions 
+    we wish to be explained:
+    """
+    )
     st.table(query)
-
+    st.write(
+        """
+    Since our models are binary classification models, we have the option to
+    see the explanations for the predicted class or the non-predicted class.
+    By default, we show the explanations for the predicted class. The checkbox
+    below can be unticked to see the non-predicted class. The predicted class 
+    should refer to the class with the highest predicted probability. Note 
+    however that the sklearn `SVC` implementation has some 
+    [issues](https://scikit-learn.org/stable/modules/svm.html#scores-probabilities) 
+    regarding its probabilities. 
+    
+    We can also see a code snippet on how to use the `LimeTabularExplainer()` 
+    class. It mainly needs the training dataset, the data instance we wish to 
+    explain, and the model prediction function (which in our case is the 
+    `predict_proba()` method of our models). We also have the option of 
+    discretizing our continuous numerical features for the explanation (which 
+    we set to be based on the feature quartiles according to the training 
+    dataset).
+    """
+    )
     explain_predicted = st.checkbox(
         "Explain model's predicted class", value=True
     )
@@ -171,3 +197,29 @@ def deploy_plots_for_sklearn_models():
             fi,
             figsize=(10, 3),
         )
+    st.markdown(
+        """
+    The plots above show how much impact the features have on the model 
+    predictions for the selected data instance. Specifically in our setup, the 
+    presence of the feature in the particular quartile translates into the
+    increase or decrease of the model's prediction probabilities. The magnitude
+    of their corresponding feature importances refer to how much the prediction
+    probability increased or decreased. The features in the figures are sorted
+    with respect to the feature importance magnitude or how impactful they were 
+    on the model's prediction. That is, the most impactful feature is at the top
+    while the least impactful is at the bottom. 
+    
+    Additionally, since we are doing a binary classification task, we can 
+    observe that the explanations for the predicted class are opposite to those 
+    for the non-predicted class.
+    
+    We can see that even if the models were trained on the same dataset and 
+    makes the same prediction for the same instance, the explanations estimated
+    by LIME are not necessarily the same. The most readily seen is the 
+    difference in ranking of the most impactful features. This suggests that 
+    the models may be using the features differently. 
+    
+    On a technical note, since LIME has some randomness in its process, it would
+    be beneficial to see the average effect on a variety of trials and datasets.
+    """
+    )
