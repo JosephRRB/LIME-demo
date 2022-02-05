@@ -129,7 +129,7 @@ def deploy_plots_for_tensorflow_model():
     pretrained on the 1000-class image dataset [`ImageNet`](https://www.image-net.org/). 
     The architecture is described in this [paper](https://arxiv.org/abs/1801.04381)
     and we chose it for its [small size and fast inference time](https://keras.io/api/applications/#usage-examples-for-image-classification-models).
-    
+    We will now use the `LimeImageExplainer()` class for this task.
     """
     )
     selected_image = select_image()
