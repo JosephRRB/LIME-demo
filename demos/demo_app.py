@@ -2,6 +2,7 @@ import streamlit as st
 
 from sklearn_models import deploy_plots_for_sklearn_models
 from theoretical_model import deploy_plots_for_theoretical_model
+from tensorflow_model import deploy_plots_for_tensorflow_model
 
 st.title("Explaining Model Predictions using LIME")
 st.markdown(
@@ -31,11 +32,13 @@ These explanations are specialized only in a local neighborhood of the instance
 being explained.
 """
 )
-demo_options = ["Theoretical Model", "Sklearn Models"]
+demo_options = ["Theoretical Model", "Sklearn Models", "Tensorflow Model"]
 demo = st.selectbox(
     "Select demo to run:", demo_options, index=0
 )
 if demo == demo_options[0]:
     deploy_plots_for_theoretical_model()
-else:
+elif demo == demo_options[1]:
     deploy_plots_for_sklearn_models()
+else:
+    deploy_plots_for_tensorflow_model()

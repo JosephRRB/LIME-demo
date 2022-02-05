@@ -121,29 +121,30 @@ def explain_predicted_class(exp, class_idx):
     return explained_image
 
 
-selected_image = select_image()
-if selected_image is not None:
-    preprocessed_image = preprocess_image(selected_image)
-    model = get_pretrained_model()
-    pred_probas = get_model_pred_probas(model, preprocessed_image)
+def deploy_plots_for_tensorflow_model():
+    selected_image = select_image()
+    if selected_image is not None:
+        preprocessed_image = preprocess_image(selected_image)
+        model = get_pretrained_model()
+        pred_probas = get_model_pred_probas(model, preprocessed_image)
 
-    plot_top_probable_classes(pred_probas, figsize=(10, 4))
+        plot_top_probable_classes(pred_probas, figsize=(10, 4))
 
-    exp = explain_instance(model, preprocessed_image)
-    class_to_explain = st.selectbox(
-        "Choose class to explain:", pred_probas.index, index=0
-    )
-    class_idx = pred_probas.index.get_loc(class_to_explain)
-    explained_image = explain_predicted_class(exp, class_idx)
+        exp = explain_instance(model, preprocessed_image)
+        class_to_explain = st.selectbox(
+            "Choose class to explain:", pred_probas.index, index=0
+        )
+        class_idx = pred_probas.index.get_loc(class_to_explain)
+        explained_image = explain_predicted_class(exp, class_idx)
 
-    col1, col2 = st.columns(2)
-    col1.image(
-        preprocessed_image[0] / 2 + 0.5,
-        caption="Chosen image",
-        use_column_width=True,
-    )
-    col2.image(
-        explained_image,
-        caption="Explanation for model prediction",
-        use_column_width=True,
-    )
+        col1, col2 = st.columns(2)
+        col1.image(
+            preprocessed_image[0] / 2 + 0.5,
+            caption="Chosen image",
+            use_column_width=True,
+        )
+        col2.image(
+            explained_image,
+            caption="Explanation for model prediction",
+            use_column_width=True,
+        )
