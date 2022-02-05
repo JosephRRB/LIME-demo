@@ -1,6 +1,3 @@
-# tensorflow-2.4.0
-# scikit-image-0.17.2
-# tqdm-4.62.3
 from io import BytesIO
 from pathlib import Path
 
@@ -95,8 +92,9 @@ def get_model_pred_probas(model, image_input):
 
 def plot_top_probable_classes(pred_probas, figsize=(10, 5)):
     fig, ax = plt.subplots(1, 1, figsize=figsize)
-    pred_probas.plot.bar(ax=ax, rot=0)
-    # plt.xlabel(fontsize=15)
+    ax.bar(pred_probas.index, pred_probas.values.ravel(), width=0.5)
+    ax.set_xlabel("Top 5 Predicted Classes", fontsize=15)
+    ax.set_ylabel("Class Probabilities", fontsize=15)
     plt.tight_layout()
 
     buffer = BytesIO()
@@ -122,6 +120,18 @@ def explain_predicted_class(exp, class_idx):
 
 
 def deploy_plots_for_tensorflow_model():
+    st.header("Tensorflow Model")
+    st.markdown(
+        """
+    For fun, let us now try to explain the predictions of a deep neural network
+    for image classification. Specifically, we will use the tensorflow
+    implementation of [`MobileNetV2()`](https://www.tensorflow.org/api_docs/python/tf/keras/applications/mobilenet_v2/MobileNetV2)
+    pretrained on the 1000-class image dataset [`ImageNet`](https://www.image-net.org/). 
+    The architecture is described in this [paper](https://arxiv.org/abs/1801.04381)
+    and we chose it for its [small size and fast inference time](https://keras.io/api/applications/#usage-examples-for-image-classification-models).
+    
+    """
+    )
     selected_image = select_image()
     if selected_image is not None:
         preprocessed_image = preprocess_image(selected_image)

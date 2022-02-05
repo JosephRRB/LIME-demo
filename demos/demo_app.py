@@ -21,10 +21,10 @@ then have a need to understand how its predictions were made.
 ["Why should I trust you?"](https://arxiv.org/abs/1602.04938) is the question
 asked by the authors who proposed the model explanation technique called 
 **LIME** (*Local Interpretable Model-agnostic Explanations*). Their work is also 
-publicly available in [this GitHub repository](https://github.com/marcotcr/lime) 
+publicly available in this [GitHub repository](https://github.com/marcotcr/lime) 
 which we will use to demonstrate how LIME works and how the code is used for 
 different models and applications. For those interested, the source code for 
-this set of demos can be found in [my GitHub repository](https://github.com/JosephRRB/LIME-demo).
+this set of demos can be found in my [GitHub repository](https://github.com/JosephRRB/LIME-demo).
 
 We will use LIME to explain a model's behaviour on a single instance. The 
 explanations here refer to the feature's impact on the model behaviour. 
