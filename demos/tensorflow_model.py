@@ -95,7 +95,7 @@ def get_pretrained_model():
     return model
 
 
-@st.cache
+@st.cache(allow_output_mutation=True)
 def get_model_pred_probas(model, image_input):
     preds = model.predict(image_input)
     decoded_preds = decode_predictions(preds, top=5)[0]
