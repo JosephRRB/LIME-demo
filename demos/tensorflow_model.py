@@ -143,8 +143,8 @@ def deploy_plots_for_tensorflow_model():
     We will now use `LimeImageExplainer()` for explaining the image 
     classification predictions. It still uses the basic principles as the 
     tabular explainer but now the perturbations of the image to be explained are
-    represented by collections of present or absent "*superpixels*". More 
-    details of how to apply LIME for images are available [here](https://github.com/marcotcr/lime/blob/master/doc/notebooks/Tutorial%20-%20Image%20Classification%20Keras.ipynb)
+    represented by collections of present or absent "*superpixels*". There are
+    more details of how to apply LIME for images are available [here](https://github.com/marcotcr/lime/blob/master/doc/notebooks/Tutorial%20-%20Image%20Classification%20Keras.ipynb)
     
     To begin, we now ask the user whether they want to provide an image to be
     classified by `MobileNetV2` and whose predictions are going to be explained 
@@ -157,7 +157,7 @@ def deploy_plots_for_tensorflow_model():
             """
         Having selected an image, we can now let `MobileNetV2` classify the 
         image and return the top 5 most probable classes (out of 1000 classes) 
-        along with the network's probabilities associated to those classes. The 
+        along with the model's probabilities associated to those classes. The 
         bar plot is ordered such that the most probable class is on the left
         while the 5th probable class is on the right.
         """
@@ -180,6 +180,14 @@ def deploy_plots_for_tensorflow_model():
         class_idx = pred_probas.index.get_loc(class_to_explain)
         explained_image = explain_predicted_class(exp, class_idx)
 
+        st.markdown(
+            f"""
+        Below, we show our chosen image (resized for the model) on the left and 
+        the explanation image by LIME on the right. That is, `MobileNetV2` 
+        classified our chosen image as `{class_to_explain}` because of the top
+        *superpixels* present in the image explanation.
+        """
+        )
         col1, col2 = st.columns(2)
         col1.image(
             preprocessed_image[0] / 2 + 0.5,

@@ -1,3 +1,14 @@
+# matplotlib==3.4.3
+# pandas==1.3.5
+# numpy==1.19.2
+# streamlit==1.5.0
+# scipy==1.5.2
+# scikit-learn==0.23.2
+# lime==0.2.0.1
+# tensorflow==2.4.0
+# scikit-image==0.17.2
+# tqdm==4.62.3
+
 import streamlit as st
 
 from sklearn_models import deploy_plots_for_sklearn_models
