@@ -26,7 +26,9 @@ def load_default_images():
         "Mount Royal Park",
         "The Joust",
         "Maple the dog",
+        "Doggo the stuffed toy",
         "Venus the cat",
+        "Zeus the owl",
     ]
     loaded_images = {
         name: image.load_img(
@@ -46,9 +48,10 @@ def choose_from_default_images():
     """
     )
     loaded_images = load_default_images()
-    cols = st.columns(2)
-    for i, (name, loaded_image) in enumerate(loaded_images.items()):
-        cols[i % 2].image(loaded_image, caption=name)
+    with st.expander("Show images to choose from:"):
+        cols = st.columns(2)
+        for i, (name, loaded_image) in enumerate(loaded_images.items()):
+            cols[i % 2].image(loaded_image, caption=name)
     selected_name = st.sidebar.radio(
         "Choose an image to be classified and explained:", loaded_images.keys()
     )

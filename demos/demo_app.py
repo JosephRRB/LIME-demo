@@ -4,7 +4,6 @@ from sklearn_models import deploy_plots_for_sklearn_models
 from theoretical_model import deploy_plots_for_theoretical_model
 from tensorflow_model import deploy_plots_for_tensorflow_model
 
-st.balloons()
 st.title("Explaining Model Predictions using LIME")
 st.markdown(
     """

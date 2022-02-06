@@ -23,29 +23,27 @@ def local_interpret_clf_model(
     model,
     X_train: pd.DataFrame,
     query: pd.DataFrame,
-    code_container,
     explain_predicted=True,
 ):
-    with code_container.expander("See LIME explanation code details:"):
-        with st.echo():
-            pred_proba_fn = model.predict_proba
-            explainer = LimeTabularExplainer(
-                X_train.values,
-                mode="classification",
-                feature_names=X_train.columns,
-                discretize_continuous=True,
-                discretizer='quartile',
-                class_names=model.classes_,
-            )
-            probas = pred_proba_fn(query)
-            if explain_predicted:
-                label = np.argmax(probas)
-            else:
-                label = np.argmin(probas)
-            exp = explainer.explain_instance(
-                query.values.ravel(), pred_proba_fn, labels=[label]
-            )
-            fi = {exp.class_names[label]: exp.as_list(label=label)}
+    with st.echo():
+        pred_proba_fn = model.predict_proba
+        explainer = LimeTabularExplainer(
+            X_train.values,
+            mode="classification",
+            feature_names=X_train.columns,
+            discretize_continuous=True,
+            discretizer='quartile',
+            class_names=model.classes_,
+        )
+        probas = pred_proba_fn(query)
+        if explain_predicted:
+            label = np.argmax(probas)
+        else:
+            label = np.argmin(probas)
+        exp = explainer.explain_instance(
+            query.values.ravel(), pred_proba_fn, labels=[label]
+        )
+        fi = {exp.class_names[label]: exp.as_list(label=label)}
     # fi_human_readable = {
     #     exp.class_names[l]: [
     #         (exp.domain_mapper.discretized_feature_names[f], fi)
@@ -109,6 +107,7 @@ def deploy_plots_for_sklearn_models():
     if st.button("Refit models on new data split"):
         fit_models()
         st.write("Refitted!")
+        st.balloons()
 
     df_train = pd.read_csv(data_dir / "train_banknote_authentication.csv")
     df_test = pd.read_csv(data_dir / "test_banknote_authentication.csv")
@@ -189,13 +188,13 @@ def deploy_plots_for_sklearn_models():
     code_container = st.empty()
     for name, model in zip(model_names, models):
         st.subheader(name)
-        fi = local_interpret_clf_model(
-            model,
-            X_train,
-            query,
-            code_container,
-            explain_predicted=explain_predicted,
-        )
+        with code_container.expander("See LIME explanation code details:"):
+            fi = local_interpret_clf_model(
+                model,
+                X_train,
+                query,
+                explain_predicted=explain_predicted,
+            )
         plot_feature_importance_for_clf_model(
             fi,
             figsize=(10, 3),
