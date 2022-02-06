@@ -60,6 +60,12 @@ def select_image():
     selected_image = None
     user_input = st.checkbox("Provide a picture?", value=False)
     if user_input:
+        st.markdown(
+            """
+        We can choose to upload an existing image here or use our device's
+        camera to take a picture.
+        """
+        )
         user_input_choices = ["Upload a picture", "Use the camera"]
         choice = st.selectbox(
             "Select an input method", user_input_choices, index=0
@@ -83,7 +89,7 @@ def preprocess_image(img):
     return preprocessed
 
 
-@st.cache
+@st.cache(allow_output_mutation=True)
 def get_pretrained_model():
     model = MobileNetV2(weights="imagenet", include_top=True)
     return model
@@ -113,20 +119,25 @@ def plot_top_probable_classes(pred_probas, figsize=(10, 5)):
     st.image(buffer)
 
 
-@st.cache
-def explain_instance(model, image_input):
-    exp = LimeImageExplainer().explain_instance(
-        image_input[0].astype("double"), model.predict, top_labels=5
-    )
-    return exp
-
-
-def explain_predicted_class(exp, class_idx):
-    class_idx_in_model = exp.top_labels[class_idx]
-    temp_image, mask = exp.get_image_and_mask(
-        class_idx_in_model, positive_only=True, num_features=10, hide_rest=True
-    )
-    explained_image = mark_boundaries(temp_image / 2 + 0.5, mask)
+# @st.cache
+def explain_instance(
+    model, preprocessed_image_to_explain, model_pred_probas, class_to_explain
+):
+    with st.echo():
+        exp = LimeImageExplainer().explain_instance(
+            preprocessed_image_to_explain[0].astype("double"),
+            model.predict,
+            top_labels=5,
+        )
+        class_idx = model_pred_probas.index.get_loc(class_to_explain)
+        class_idx_in_model = exp.top_labels[class_idx]
+        temp_image, mask = exp.get_image_and_mask(
+            class_idx_in_model,
+            positive_only=True,
+            num_features=10,
+            hide_rest=True,
+        )
+        explained_image = mark_boundaries(temp_image / 2 + 0.5, mask)
     return explained_image
 
 
@@ -146,9 +157,9 @@ def deploy_plots_for_tensorflow_model():
     represented by collections of present or absent "*superpixels*". There are
     more details of how to apply LIME for images are available [here](https://github.com/marcotcr/lime/blob/master/doc/notebooks/Tutorial%20-%20Image%20Classification%20Keras.ipynb)
     
-    To begin, we now ask the user whether they want to provide an image to be
-    classified by `MobileNetV2` and whose predictions are going to be explained 
-    by `LimeImageExplainer`.
+    To begin, we now choose whether we want to provide an image to be classified 
+    by `MobileNetV2` and whose predictions are going to be explained by 
+    `LimeImageExplainer`.
     """
     )
     selected_image = select_image()
@@ -176,16 +187,20 @@ def deploy_plots_for_tensorflow_model():
         class_to_explain = st.selectbox(
             "Choose a class to explain:", pred_probas.index, index=0
         )
-        exp = explain_instance(model, preprocessed_image)
-        class_idx = pred_probas.index.get_loc(class_to_explain)
-        explained_image = explain_predicted_class(exp, class_idx)
+        with st.expander("See LIME explanation code details:"):
+            explained_image = explain_instance(
+                model, preprocessed_image, pred_probas, class_to_explain
+            )
 
         st.markdown(
             f"""
         Below, we show our chosen image (resized for the model) on the left and 
         the explanation image by LIME on the right. That is, `MobileNetV2` 
-        classified our chosen image as `{class_to_explain}` because of the top
-        *superpixels* present in the image explanation.
+        can classify our chosen image as `{class_to_explain}` with the 
+        probability shown in the bar plot because of the *superpixels* present 
+        in the image explanation. For our case, we chose only to show the top 
+        superpixels that positively contribute to the probability of the image
+        being classified as `{class_to_explain}` and grey-out all the others.
         """
         )
         col1, col2 = st.columns(2)

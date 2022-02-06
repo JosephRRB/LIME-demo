@@ -5,6 +5,6 @@ streamlit
 scipy
 scikit-learn
 lime
-tensorflow==2.4.0
+tensorflow
 scikit-image
 tqdm
