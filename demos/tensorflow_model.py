@@ -38,18 +38,27 @@ def load_default_images():
 
 
 def choose_from_default_images():
+    st.markdown(
+        """
+    By default, we can choose from a selection of images to be classified
+    and explained for illustrative purposes. We can choose an image using the
+    sidebar.
+    """
+    )
     loaded_images = load_default_images()
     cols = st.columns(2)
     for i, (name, loaded_image) in enumerate(loaded_images.items()):
         cols[i % 2].image(loaded_image, caption=name)
-    selected_name = st.sidebar.radio("Choose an image:", loaded_images.keys())
+    selected_name = st.sidebar.radio(
+        "Choose an image to be classified and explained:", loaded_images.keys()
+    )
     selected_image = loaded_images[selected_name]
     return selected_image
 
 
 def select_image():
     selected_image = None
-    user_input = st.checkbox("Input a picture?", value=False)
+    user_input = st.checkbox("Provide a picture?", value=False)
     if user_input:
         user_input_choices = ["Upload a picture", "Use the camera"]
         choice = st.selectbox(
@@ -80,6 +89,7 @@ def get_pretrained_model():
     return model
 
 
+@st.cache
 def get_model_pred_probas(model, image_input):
     preds = model.predict(image_input)
     decoded_preds = decode_predictions(preds, top=5)[0]
@@ -93,8 +103,9 @@ def get_model_pred_probas(model, image_input):
 def plot_top_probable_classes(pred_probas, figsize=(10, 5)):
     fig, ax = plt.subplots(1, 1, figsize=figsize)
     ax.bar(pred_probas.index, pred_probas.values.ravel(), width=0.5)
-    ax.set_xlabel("Top 5 Predicted Classes", fontsize=15)
-    ax.set_ylabel("Class Probabilities", fontsize=15)
+    ax.set_xlabel("Top 5 Predicted Classes", fontsize=14)
+    ax.set_ylabel("Class Probabilities", fontsize=14)
+    ax.set_title("Predictions of MobileNetV2", fontsize=18)
     plt.tight_layout()
 
     buffer = BytesIO()
@@ -129,21 +140,43 @@ def deploy_plots_for_tensorflow_model():
     pretrained on the 1000-class image dataset [`ImageNet`](https://www.image-net.org/). 
     The architecture is described in this [paper](https://arxiv.org/abs/1801.04381)
     and we chose it for its [small size and fast inference time](https://keras.io/api/applications/#usage-examples-for-image-classification-models).
-    We will now use the `LimeImageExplainer()` class for this task.
+    We will now use `LimeImageExplainer()` for explaining the image 
+    classification predictions. It still uses the basic principles as the 
+    tabular explainer but now the perturbations of the image to be explained are
+    represented by collections of present or absent "*superpixels*". More 
+    details of how to apply LIME for images are available [here](https://github.com/marcotcr/lime/blob/master/doc/notebooks/Tutorial%20-%20Image%20Classification%20Keras.ipynb)
+    
+    To begin, we now ask the user whether they want to provide an image to be
+    classified by `MobileNetV2` and whose predictions are going to be explained 
+    by `LimeImageExplainer`.
     """
     )
     selected_image = select_image()
     if selected_image is not None:
+        st.markdown(
+            """
+        Having selected an image, we can now let `MobileNetV2` classify the 
+        image and return the top 5 most probable classes (out of 1000 classes) 
+        along with the network's probabilities associated to those classes. The 
+        bar plot is ordered such that the most probable class is on the left
+        while the 5th probable class is on the right.
+        """
+        )
         preprocessed_image = preprocess_image(selected_image)
         model = get_pretrained_model()
         pred_probas = get_model_pred_probas(model, preprocessed_image)
+        plot_top_probable_classes(pred_probas, figsize=(10, 3))
 
-        plot_top_probable_classes(pred_probas, figsize=(10, 4))
-
-        exp = explain_instance(model, preprocessed_image)
-        class_to_explain = st.selectbox(
-            "Choose class to explain:", pred_probas.index, index=0
+        st.markdown(
+            """
+        We can now choose which class we want to explain. By default, we explain
+        the most probable class of our selected image.
+        """
         )
+        class_to_explain = st.selectbox(
+            "Choose a class to explain:", pred_probas.index, index=0
+        )
+        exp = explain_instance(model, preprocessed_image)
         class_idx = pred_probas.index.get_loc(class_to_explain)
         explained_image = explain_predicted_class(exp, class_idx)
 

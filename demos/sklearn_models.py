@@ -177,7 +177,10 @@ def deploy_plots_for_sklearn_models():
     `predict_proba()` method of our models). We also have the option of 
     discretizing our continuous numerical features for the explanation (which 
     we set to be based on the feature quartiles according to the training 
-    dataset).
+    dataset). In this case then, the perturbed data would be one's and zero's 
+    representing the presence or absence, respectively, of the feature
+    perturbation in the same quartile bin as the original data row being 
+    explained.  
     """
     )
     explain_predicted = st.checkbox(
