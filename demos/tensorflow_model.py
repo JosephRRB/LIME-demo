@@ -48,7 +48,7 @@ def choose_from_default_images():
     """
     )
     loaded_images = load_default_images()
-    with st.expander("Show images to choose from:"):
+    with st.expander("Show images to choose from:", expanded=True):
         cols = st.columns(2)
         for i, (name, loaded_image) in enumerate(loaded_images.items()):
             cols[i % 2].image(loaded_image, caption=name)
@@ -66,7 +66,8 @@ def select_image():
         st.markdown(
             """
         We can choose to upload an existing image here or use our device's
-        camera to take a picture.
+        camera to take a picture. We will then use that image for the following
+        demo.
         """
         )
         user_input_choices = ["Upload a picture", "Use the camera"]
@@ -157,11 +158,16 @@ def deploy_plots_for_tensorflow_model():
     We will now use `LimeImageExplainer()` for explaining the image 
     classification predictions. It still uses the basic principles as the 
     tabular explainer but now the perturbations of the image to be explained are
-    represented by collections of present or absent "*superpixels*". There are
-    more details of how to apply LIME for images are available [here](https://github.com/marcotcr/lime/blob/master/doc/notebooks/Tutorial%20-%20Image%20Classification%20Keras.ipynb)
-    
+    represented by collections of present or absent "*superpixels*". More 
+    details are available on [this tutorial](https://github.com/marcotcr/lime/blob/master/doc/notebooks/Tutorial%20-%20Image%20Classification%20Keras.ipynb)
+    which we follow closely.
+    """
+    )
+    st.subheader("Explaining an instance")
+    st.markdown(
+        """
     To begin, we now choose whether we want to provide an image to be classified 
-    by `MobileNetV2` and whose predictions are going to be explained by 
+    by `MobileNetV2` and whose predictions on it are going to be explained by 
     `LimeImageExplainer`.
     """
     )

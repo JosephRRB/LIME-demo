@@ -139,7 +139,7 @@ def deploy_plots_for_sklearn_models():
     displayed.
     """
     )
-    st.header("Explaining an instance")
+    st.subheader("Explaining an instance")
     st.markdown(
         """
     We can now pick an instance from the test dataset as shown in the table 
